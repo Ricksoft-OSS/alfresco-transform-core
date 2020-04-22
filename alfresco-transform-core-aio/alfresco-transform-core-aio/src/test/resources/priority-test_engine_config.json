@@ -1,0 +1,35 @@
+{
+  "transformOptions": {
+    "textToPdfOptions": [
+      {"value": {"name": "pageLimit"}},
+      {"value": {"name": "sourceEncoding"}}
+    ],
+    "stringOptions": [
+      {"value": {"name": "sourceEncoding"}},
+      {"value": {"name": "targetEncoding"}}
+    ],
+    "htmlOptions": [
+      {"value": {"name": "sourceEncoding"}}
+    ]
+  },
+  "transformers": [
+
+    {
+      "transformerName": "libreoffice",
+      "supportedSourceAndTargetList": [
+        {"sourceMediaType": "text/plain",  "maxSourceSizeBytes": 5242880,                  "targetMediaType": "application/pdf" }
+
+      ]
+    },
+    {
+      "transformerName": "textToPdf",
+      "supportedSourceAndTargetList": [
+        {"sourceMediaType": "text/plain",                    "priority": 55, "targetMediaType": "application/pdf"}
+      ],
+      "transformOptions": [
+        "textToPdfOptions"
+      ]
+    }
+
+  ]
+}

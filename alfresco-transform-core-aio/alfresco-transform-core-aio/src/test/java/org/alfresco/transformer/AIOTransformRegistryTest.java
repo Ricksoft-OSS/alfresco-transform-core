@@ -24,11 +24,13 @@
  * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
  * #L%
  */
-package org.alfresco.transformer.transformers;
+package org.alfresco.transformer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.alfresco.transform.client.model.config.TransformConfig;
-import org.alfresco.transformer.AIOTransformRegistry;
+import org.alfresco.transformer.transformers.MiscAdapter;
+import org.alfresco.transformer.transformers.TikaAdapter;
+import org.alfresco.transformer.transformers.Transformer;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.Before;
@@ -65,9 +67,9 @@ public class AIOTransformRegistryTest
     @Before
     public void before() throws Exception
     {
+        aioTransformerRegistry = new AIOTransformRegistry();
         aioTransformerRegistry.registerTransformer(new MiscAdapter());
         aioTransformerRegistry.registerTransformer(new TikaAdapter());
-
     }
 
     private void writeToFile(File file, String content, String encoding) throws Exception
@@ -86,6 +88,53 @@ public class AIOTransformRegistryTest
     private TransformConfig loadConfig(String s) throws Exception
     {
         return objectMapper.readValue(new ClassPathResource(s).getFile(), TransformConfig.class);
+    }
+
+    private Transformer generateMockTransformer(String id)
+    {
+        return new Transformer()
+        {
+            @Override
+            public void transform(File sourceFile, File targetFile, String sourceMimetype, String targetMimetype,
+                                  Map<String, String> transformOptions) throws Exception
+            {
+                System.out.println("very important transformation taking place");
+            }
+
+            @Override
+            public String getTransformerId()
+            {
+                return id;
+            }
+        };
+    }
+
+    @Test
+    public void testPriorityInTransformerSelection() throws Exception
+    {
+
+        aioTransformerRegistry = new AIOTransformRegistry();
+
+        // Load and register transform config
+        // Switching the order of transformers in priority-test_engine_config.json will fail the test
+        // Removing  "maxSourceSizeBytes": 5242880 also fixes the test regardless of the order in the json config.
+
+        // Register transform config json without AIO methods
+        TransformConfig transformConfig = aioTransformerRegistry.loadTransformConfig("priority-test_engine_config.json");
+        transformConfig
+                .getTransformers()
+                .forEach(t -> aioTransformerRegistry.register(t, transformConfig.getTransformOptions(), null, null));
+
+        // Register transform config json through AIO
+        //aioTransformerRegistry.registerTransformer(generateMockTransformer("priority-test"));
+
+
+        // Use transform registry to find the transform name
+        String transformer = aioTransformerRegistry.findTransformerName("text/plain", 10,
+                "application/pdf",null, null);
+
+        String expectedTransform = "libreoffice";
+        assertEquals("Wrong priority transformer", expectedTransform, transformer);
     }
 
     @Test
